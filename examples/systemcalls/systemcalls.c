@@ -1,4 +1,8 @@
 #include "systemcalls.h"
+#include <stdlib.h>
+#include <sys/wait.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 /**
  * @param cmd the command to execute with system()
@@ -16,6 +20,14 @@ bool do_system(const char *cmd)
  *   and return a boolean true if the system() call completed with success
  *   or false() if it returned a failure
 */
+ 
+    int stat;
+    stat = system(cmd);
+    
+    if ( stat == -1 )
+    {
+        return false;
+    }
 
     return true;
 }
@@ -60,7 +72,39 @@ bool do_exec(int count, ...)
 */
 
     va_end(args);
-
+    pid_t pid;
+    int stat;
+    
+    if ( command[0][0] != '/' )
+    {
+        return false;
+    }
+    
+    pid = fork();
+    
+    if ( pid == -1 )
+    {
+        return false;
+    }
+    else if ( pid == 0 )
+    {
+        execv(command[0], &command[0]);
+        perror( "Failure executing execv" );
+        _exit( EXIT_FAILURE );
+    }
+    
+    if ( waitpid( pid, &stat, 0 ) == -1 )
+    {
+        return false;
+    }
+    else if ( WIFEXITED( stat ) )
+    {
+        if ( WEXITSTATUS( stat ) != 0 ) 
+        {
+            return false;
+        }    
+    }
+    
     return true;
 }
 
@@ -93,7 +137,53 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
  *
 */
 
-    va_end(args);
-
+    va_end(args);    
+    pid_t pid;
+    int stat;
+    
+    if ( command[0][0] != '/' )
+    {
+        return false;
+    }
+    
+    pid = fork();
+    int fd = open( outputfile, O_WRONLY | O_TRUNC | O_CREAT, 0644 );
+    if ( fd < 0 )
+    {
+        perror( "Could not open file" );
+        abort();
+    }
+    
+    switch ( pid = fork() )
+    {
+        case -1:
+                perror("forking error");
+                return false;
+        case 0:
+		if ( dup2( fd, 1 ) < 0 )
+		{
+		    perror( "Dup2 error" );
+		    return false;
+		}
+		close( fd );
+		execv ( command[0], &command[0] );
+		perror ( "Failure executing execv" );
+                return false;
+        default:
+        	close( fd );   
+    }
+    
+    if ( waitpid( pid, &stat, 0 ) == -1 )
+    {
+        return false;
+    }
+    else if ( WIFEXITED( stat ) )
+    {
+        if ( WEXITSTATUS( stat ) != 0 ) 
+        {
+           return false;
+        }
+    }
+  
     return true;
 }
