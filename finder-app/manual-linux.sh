@@ -11,9 +11,9 @@ KERNEL_VERSION=v5.15.163
 BUSYBOX_VERSION=1_33_1
 FINDER_APP_DIR=$(realpath $(dirname $0))
 ARCH=arm64
-CROSS_COMPILE=aarch64-none-linux-gnu-
-#CROSS_COMPILE_SYSROOT= "$(${CROSS_COMPILE}gcc -print-sysroot)"
-CROSS_COMPILE_SYSROOT=/home/ld/ToolChains/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-linux-gnu/aarch64-none-linux-gnu
+#CROSS_COMPILE=aarch64-none-linux-gnu-
+CROSS_COMPILE=/home/ld/EmbeddedToolChains/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-
+CROSS_COMPILE_SYSROOT=/home/ld/EmbeddedToolChains/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-linux-gnu/aarch64-none-linux-gnu/libc
 
 if [ $# -lt 1 ]
 then
@@ -23,7 +23,6 @@ else
 	echo "Using passed directory ${OUTDIR} for output"
 fi
 
-#mkdir -p ${OUTDIR}
 if [ ! -L ${OUTDIR} ]; then
     mkdir -p ${OUTDIR}
 fi
@@ -40,10 +39,10 @@ if [ ! -e ${OUTDIR}/linux-stable/arch/${ARCH}/boot/Image ]; then
     git checkout ${KERNEL_VERSION}
 
     # TODO: Add your kernel build steps here
-    make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} mrproper
-    make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} defconfig
-    make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} all
-    make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} dtbs
+    make ARCH=${ARCH} CROSS_COMPILE=/home/ld/EmbeddedToolChains/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu- mrproper
+    make ARCH=${ARCH} CROSS_COMPILE=/home/ld/EmbeddedToolChains/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu- defconfig
+    make ARCH=${ARCH} CROSS_COMPILE=/home/ld/EmbeddedToolChains/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu- all
+    make ARCH=${ARCH} CROSS_COMPILE=/home/ld/EmbeddedToolChains/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu- dtbs
 fi
 
 echo "Adding the Image in outdir"
@@ -89,11 +88,11 @@ ${CROSS_COMPILE}readelf -a bin/busybox | grep "program interpreter"
 ${CROSS_COMPILE}readelf -a bin/busybox | grep "Shared library"
 
 # TODO: Add library dependencies to rootfs
-#cd "$OUTDIR"
-cp ${CROSS_COMPILE_SYSROOT}/lib/ld-linux-aarch64.so.1 ${OUTDIR}/rootfs/lib/
-cp ${CROSS_COMPILE_SYSROOT}/lib64/libm.so.6 ${OUTDIR}/rootfs/lib64/
-cp ${CROSS_COMPILE_SYSROOT}/lib/libresolv.so.2 ${OUTDIR}/rootfs/lib64/
-cp ${CROSS_COMPILE_SYSROOT}/lib/libc.so.6 ${OUTDIR}/rootfs/lib64/
+cp /home/ld/EmbeddedToolChains/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-linux-gnu/bin/../aarch64-none-linux-gnu/libc/lib/ld-linux-aarch64.so.1 ${OUTDIR}/rootfs/lib/
+cp /home/ld/EmbeddedToolChains/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-linux-gnu/aarch64-none-linux-gnu/libc/lib64/libm.so.6 ${OUTDIR}/rootfs/lib64/
+cp /home/ld/EmbeddedToolChains/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-linux-gnu/aarch64-none-linux-gnu/libc/lib64/libresolv.so.2 ${OUTDIR}/rootfs/lib64/
+#cp ${CROSS_COMPILE_SYSROOT}/lib64/libresolv.so.2 ${OUTDIR}/rootfs/lib64/
+cp /home/ld/EmbeddedToolChains/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-linux-gnu/aarch64-none-linux-gnu/libc/lib64/libc.so.6 ${OUTDIR}/rootfs/lib64/
 
 # TODO: Make device nodes
 cd "$OUTDIR"/rootfs
@@ -114,9 +113,11 @@ cp ./conf/* ${OUTDIR}/rootfs/home/conf
 
 # TODO: Chown the root directory
 cd ${OUTDIR}/rootfs/
-sudo chown -R root:root *
+#sudo chown -R root:root *
+sudo chown -R root:root ${OUTDIR}/rootfs
 
 # TODO: Create initramfs.cpio.gz
 cd ${OUTDIR}/rootfs/
 find . | cpio -H newc -ov --owner root:root > ${OUTDIR}/initramfs.cpio
+cd ${OUTDIR}
 gzip -f ${OUTDIR}/initramfs.cpio

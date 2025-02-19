@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 #Read-in directory and search string
 filedir=$1
