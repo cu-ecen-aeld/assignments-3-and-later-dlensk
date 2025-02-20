@@ -14,6 +14,7 @@ ARCH=arm64
 #CROSS_COMPILE=aarch64-none-linux-gnu-
 CROSS_COMPILE=/home/ld/EmbeddedToolChains/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-
 CROSS_COMPILE_SYSROOT=/home/ld/EmbeddedToolChains/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-linux-gnu/aarch64-none-linux-gnu/libc
+#
 
 if [ $# -lt 1 ]
 then
