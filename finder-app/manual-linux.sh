@@ -101,7 +101,7 @@ cp ${CROSS_COMPILE_SYSROOT}/lib64/libm.so.6 ${OUTDIR}/rootfs/lib64/
 #cp /home/ld/EmbeddedToolChains/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-linux-gnu/aarch64-none-linux-gnu/libc/lib64/libm.so.6 ${OUTDIR}/rootfs/lib64/
 #cp /home/ld/EmbeddedToolChains/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-linux-gnu/aarch64-none-linux-gnu/libc/lib64/libresolv.so.2 ${OUTDIR}/rootfs/lib64/
 cp ${CROSS_COMPILE_SYSROOT}/lib64/libresolv.so.2 ${OUTDIR}/rootfs/lib64/
-cp /home/ld/EmbeddedToolChains/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-linux-gnu/aarch64-none-linux-gnu/libc/lib64/libc.so.6 ${OUTDIR}/rootfs/lib64/
+#cp /home/ld/EmbeddedToolChains/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-linux-gnu/aarch64-none-linux-gnu/libc/lib64/libc.so.6 ${OUTDIR}/rootfs/lib64/
 cp ${CROSS_COMPILE_SYSROOT}/lib64/libc.so.6 ${OUTDIR}/rootfs/lib64/
 
 # TODO: Make device nodes
