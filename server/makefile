@@ -1,19 +1,23 @@
 CC ?= $(CROSS_COMPILE)gcc
 CFLAGS= -Werror -g -Wall
 TARGET=aesdsocket
+SRC=aesdsocket.c
+OBJ=aesdsocket.o
 
-default: aesdsocket
+all: $(TARGET)
 
-all: aesdsocket
-
-aesdsocket: aesdsocket.o
-	$(CC) $(CFLAGS) aesdsocket.o -o aesdsocket
-    
-aesdsocket.o: aesdsocket.c
-	$(CC) $(CFLAGS) -c aesdsocket.c
+$(OBJ) : %.o : %.c
+	$(CC) $(CFLAGS) -c $^ -o $@
 	
+$(TARGET): $(OBJ)
+	$(CC) $(CFLAGS) $^ -o $(TARGET)
+
+.PHONY:clean
 clean:
-	rm -f aesdsocket.o aesdsocket 
+	rm -f $(OBJ) $(TARGET)
+
+	
+
 	 
 
 

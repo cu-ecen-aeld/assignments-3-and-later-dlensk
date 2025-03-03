@@ -11,7 +11,7 @@
 #include <sys/wait.h>
 #include <signal.h>
 #include <syslog.h>
-//#include <sys/stat.h>
+#include <sys/stat.h>
 #include <fcntl.h>
 
 #define DATAFILEPATH "/var/tmp/aesdsocketdata"
@@ -21,33 +21,50 @@
 #define PORT "9000"
 
 int sockfd = -1;
+int new_fd = -1;;        	
 int terminate_connection = 0;
 
 void SignalHandler(int signal)
 {
 	if (signal == SIGTERM || signal == SIGINT)
 	{
-		syslog(LOG_INFO, "Caught signal, exiting");
-		remove(DATAFILEPATH);
+		syslog(LOG_INFO, "Caught signal, exiting");		
+		if (sockfd != -1)
+		{
+		close(sockfd);
+		}
+		if (new_fd != -1)
+		{
+		close(new_fd);
+		}
 		terminate_connection = 1;
+		remove(DATAFILEPATH);
+		exit(0);
 	}
 	
 }
 
 void StartDaemon()
 {
+	printf("Attempting to fork");
 	pid_t pid = fork();
 	
-	if (pid < 0) 
+	if (pid == -1) 
 	{
 		syslog(LOG_ERR, "Fork was unsuccessfull");
+		printf("Fork was unsuccessfull");
 		exit(EXIT_FAILURE);
 	}
 	
+	printf("pid greater than 0");
+	
 	if (pid > 0) 
-	{
-		exit(EXIT_FAILURE);
+	{		
+		exit(EXIT_SUCCESS);
 	}
+	
+	umask(0);
+	printf("setID error");
 	
 	if (setsid() == -1)
 	{
@@ -55,12 +72,13 @@ void StartDaemon()
 		exit(EXIT_FAILURE);
 	}
 	
+	
 	if (chdir("/") == -1)
 	{
 		syslog(LOG_ERR, "Unable to change to root directory");
 		exit(EXIT_FAILURE);
 	}
-	
+		
 	int devNull = open("/dev/null", O_RDWR);
 	
 	if(devNull == -1)
@@ -72,7 +90,12 @@ void StartDaemon()
 	dup2(devNull, STDOUT_FILENO);
 	dup2(devNull, STDERR_FILENO);
 	dup2(devNull, STDIN_FILENO);
+	//close(STDOUT_FILENO);
+	//close(STDERR_FILENO);
+	//close(STDIN_FILENO);
 	close(devNull);
+	
+
 }
 
 
@@ -81,20 +104,20 @@ int main( int argc, char *argv[] )
 	int daemonActive = 0;
 	char dataBuff[BUFFERSIZE];
 	struct addrinfo hints, *servinfo;
-        struct sockaddr_storage clientAddr; // connector's address information
-        socklen_t addr_size;
+        struct sockaddr_in clientAddr; // connector's address information
+        socklen_t addr_size = sizeof(clientAddr);
+        
         int yes=1; 
+        
+        printf("Welcome to Main");
         
         signal(SIGTERM, SignalHandler);
         signal(SIGINT, SignalHandler);
         
-        
-        for (int arg = 1; arg < argc; arg++)
+        if ((strcmp(argv[1], "-d") == 0) && argc == 2)
         {
-	        if (strcmp(argv[arg], "-d") == 0)
-	        {
-	        	daemonActive = 1;
-	        }
+        	daemonActive = 1;
+        	printf("Daemon Active");
         }
         
         memset(&hints, 0, sizeof(hints));
@@ -135,19 +158,20 @@ int main( int argc, char *argv[] )
         if (listen(sockfd, BACKLOG) == -1)
         {
         	syslog(LOG_ERR, "Unable to listen on socket");
+        	//remove(DATAFILEPATH);
         	return -1;	
         }
         
         //Check if daemon needs to be started
         if (daemonActive)
         {
+        	printf("Daemon Starting");
         	StartDaemon();
         }
-        
+         
         while(!terminate_connection)
         {
-        	int new_fd;
-        	addr_size = sizeof clientAddr;
+        	
         	
         	new_fd = accept(sockfd, (struct sockaddr *)&clientAddr, &addr_size);
         	if (new_fd == -1) 
@@ -156,13 +180,17 @@ int main( int argc, char *argv[] )
             		continue;     
             	}     
             	
+            	printf("Accepted connection from %s\n", inet_ntoa(clientAddr.sin_addr));
+            	
             	int file_desc = open(DATAFILEPATH, O_CREAT | O_WRONLY | O_APPEND, 0666);
             	if (file_desc == -1)
             	{
             		syslog(LOG_ERR, "Unable to open file");
+            		printf("Unable to open file");
             		close(new_fd);
             		continue;
             	}
+            	
             	
             	ssize_t recvBytes;
             	while ((recvBytes = recv(new_fd, dataBuff, BUFFERSIZE-1, 0)) > 0)
@@ -171,10 +199,10 @@ int main( int argc, char *argv[] )
             		write(file_desc, dataBuff, recvBytes);
             		if (strchr(dataBuff, '\n'))
             		{
-            		
-            			break;
+            		break;
             		}
-            	}
+            	
+            	}        	
             	close(file_desc);
             	
             	file_desc = open(DATAFILEPATH, O_RDONLY);
@@ -186,13 +214,16 @@ int main( int argc, char *argv[] )
             			send(new_fd, dataBuff, recvBytes, 0);
             		}
             		
+            		printf("Closed connection from %s\n", inet_ntoa(clientAddr.sin_addr));
             		close(file_desc);
             	} 
             	
-            	close(new_fd);	        		
+            	close(new_fd);	         	        	      		
         }
+      
+        //remove(DATAFILEPATH);
         
-        return 0;       
+	return 0;       
 }
 
 

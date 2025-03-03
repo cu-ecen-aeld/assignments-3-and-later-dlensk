@@ -1,8 +1,8 @@
 #!/bin/sh
 
 case "$1" in
-
 	start)
+		echo "Server Starting"
 		start-stop-daemon -S -n aesdsocket -a /usr/bin/aesdsocket -- -d
 		
 		if [ $? -eq 0 ]; then
@@ -15,6 +15,7 @@ case "$1" in
 		;;
 		
 	stop)
+		echo "Server Stopping"
 		start-stop-daemon -K -n aesdsocket
 		
 		if [ $? -eq 0 ]; then
@@ -27,5 +28,4 @@ case "$1" in
 		;;
 		
 esac
-
 exit 0
